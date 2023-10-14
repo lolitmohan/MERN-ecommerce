@@ -35,6 +35,7 @@ const AllFeatures=async()=>{
         return {status:"fail",data:"Somethig Went Wrong"}
     }
 }
+
 const ProductByRemark= async (req)=>{
     try{
         let remark=req.params.remark;
@@ -45,7 +46,7 @@ const ProductByRemark= async (req)=>{
         let unwindCategoryStage={$unwind: "$category"}
         let unwindBrandStage={$unwind: "$brand"}
         let data=await ProductModel.aggregate(
-            [matchStage, JoinStage1, JoinStage2, unwindCategoryStage, unwindBrandStage, projectionStage]
+            [matchStage]
         )
         return {status:"success", data:data}
     }
@@ -67,7 +68,7 @@ const ProductByCategory=async(req)=>{
         let unwindCategoryStage={$unwind:'$category'}
 
         let data= await ProductModel.aggregate([
-            matchStage, JoinStage1, JoinStage2, unwindBrandStage,unwindCategoryStage, projectionStage
+            matchStage, JoinStage1,JoinStage2,unwindBrandStage,unwindCategoryStage,projectionStage
         ])
 
         return {status:"Success", data:data}
@@ -109,7 +110,7 @@ const ProductByCategoryLimit10=async(req)=>{
         let unwindCategoryStage={$unwind:'$category'}
 
         let data= await ProductModel.aggregate([
-            matchStage, limit, JoinStage1, JoinStage2, unwindBrandStage,unwindCategoryStage, projectionStage
+            matchStage, limit
         ])
 
         return {status:"Success", data:data}
@@ -142,7 +143,7 @@ const ProductByKeyword= async (req)=>{
         let projectionStage= {$project: {'category._id': 0, 'brand._id': 0, 'categoryID':0, 'brandID':0}}
         let unwindCategoryStage={$unwind: "$category"}
         let unwindBrandStage={$unwind: "$brand"}
-        let data=await ProductModel.aggregate([matchStage, JoinStage1, JoinStage2, unwindCategoryStage, unwindBrandStage, projectionStage])
+        let data=await ProductModel.aggregate([matchStage, JoinStage1, JoinStage2, unwindBrandStage, unwindCategoryStage, projectionStage])
         return {status:"success", data:data}
     }
     catch (e) {
