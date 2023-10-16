@@ -6,6 +6,8 @@ const UserController=require('../controller/UserController');
 const ProductController=require('../controller/ProductController');
 const AuthVerify=require('../middelwaer/AuthVerify');
 const ProfileController=require('../controller/ProfileController');
+const InvoiceController=require('../controller/InvoiceController');
+
 
 
 const route=express.Router();
@@ -42,6 +44,11 @@ route.get('/WishList',AuthVerify,ProductController.WishList);
 route.get('/CreateCartList',AuthVerify,ProductController.CreateCartList);
 route.get('/RemoveCartList',AuthVerify,ProductController.RemoveCartList);
 route.get('/CartList',AuthVerify,ProductController.CartList);
+
+
+// Invoce
+route.get('/InvoiceCreate',AuthVerify,InvoiceController.InvoiceCreate);
+
 
 
 // Profile

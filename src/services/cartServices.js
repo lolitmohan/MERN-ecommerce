@@ -1,14 +1,30 @@
-const CartModel=require('../model/CartModel');
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const ProductModel=require('../model/ProductModel');
+const CartModel = require('../model/CartModel');
 const ObjectId = mongoose.Types.ObjectId;
 
 const CreateCart = async (req)=>{
     try{
+
+        
         let user_id=req.headers.id;
         let reqBody=req.body;// Product ID
-        reqBody.userID = user_id;
+        let productID=reqBody.productID;
+
+        //Price Calculation
+
+        let product=await ProductModel.findOne({_id:productID})
+        let price=product.price;
+        if(product.discount){
+            price=product.discountPrice;
+        }
+        let totalPrice=price*reqBody.qty;
+
+        reqBody.userID=user_id;
+        reqBody.price=totalPrice;
+        
         await  CartModel.updateOne({userID: user_id, productID: reqBody.productID}, {$set:reqBody}, {upsert:true})
-        return {status:"success", message:"Wish List Created"}
+        return {status:"success", message:"Cart List Created"}
     }
     catch (e) {
         return {status:"fail", message:"Something Went Wrong"}
@@ -20,8 +36,8 @@ const RemoveCart = async (req)=>{
         let user_id=req.headers.id;
         let reqBody=req.body;// Product ID
         reqBody.userID = user_id;
-        await  CartModel.deleteOne({userID: user_id, productID: reqBody.productID})
-        return {status:"success", message:"Wish List Deleted"}
+        await  CartModel.deleteOne({userID: user_id, productID: reqBody.productID});
+        return {status:"success", message:"Cart List Deleted"}
     }
     catch (e) {
         return {status:"fail", message:"Something Went Wrong"}

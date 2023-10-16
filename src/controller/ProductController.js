@@ -1,7 +1,6 @@
 const {ProductByCategory, ProductByBrand, ProductByRemark, ProductBySlider, ProductByKeyword, DetailsByID, ProductByCategoryLimit10}=require('../services/ProductServices');
 const { CreateWish, RemoveWish, Wish } = require('../services/WishServices');
-const { CreateCart, RemoveCart, Cart } = require('../services/CartServices');
-
+const { CreateCart, RemoveCart, Cart } = require('../services/cartServices');
 
 exports.ListByBrand=async (req,res)=>{
     let result=await  ProductByBrand(req)
@@ -54,17 +53,19 @@ exports.WishList=async (req,res)=>{
     return res.status(200).json(result)
 }
 
-exports.CreateCartList=async(req,res)=>{
-    let result= await CreateCart(req);
-    return res.status(200).json(result);
+
+exports.CreateCartList=async (req,res)=>{
+    let result=await CreateCart(req)
+    return res.status(200).json(result)
 }
 
-exports.RemoveCartList=async(req,res)=>{
-    let result=await RemoveCart(req);
-    return res.status(200).json(result);
+exports.RemoveCartList=async (req,res)=>{
+    let result=await RemoveCart(req)
+    return res.status(200).json(result)
 }
 
-exports.CartList=async(req,res)=>{
-    let result =await Cart(req);
-    return res.status(200).json(result);
+
+exports.CartList=async (req,res)=>{
+    let result=await Cart(req)
+    return res.status(200).json(result)
 }
