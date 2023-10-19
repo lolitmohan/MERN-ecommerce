@@ -1,77 +1,135 @@
-const InvoicesModel=require('../model/InvoiceModel');
-const mongoose=require('mongoose');
-const ProductModel=require('../model/ProductModel');
-const CartModel = require('../model/CartModel');
-const ProfileModel = require('../model/ProfileModel');
-const ObjectId=mongoose.Types.ObjectId;
+const mongoose = require("mongoose");
+const CartModel = require("../model/CartModel");
+const ProfileModel = require("../model/ProfileModel");
+const InvoiceModel = require("../model/InvoiceModel");
+const PaymentSettingModel = require("../model/PaymentSettingModel");
+const ObjectId = mongoose.Types.ObjectId;
+const FormData = require('form-data');
+const axios = require("axios");
 
-
-const CalculateInvoice=async(req)=>{
-
+const CalculateInvoice = async (req)=>{
     try{
+        // Invoice Calculation
+       let user_id=new ObjectId(req.headers.id);
+       let cus_email=req.headers.email;
 
-        //Invoice Calculation
-        let user_id=new ObjectId(req.headers.id);
-        let data=await CartModel.aggregate([
-            {$match:{userID:user_id}},
-            {$group:{_id:0,total:{$sum: {$toDecimal:"$price"}}}}
+       let data=await CartModel.aggregate([
+            {$match: {userID:user_id}},
+            {$group: {_id: 0, sum: {$sum: {$toDecimal: "$price"}}}}
         ]);
 
-
-
-        let ayable=data[0].sum;
-        let tran_id= Math.floor(100000000 + Math.random() * 900000000);
+        let payable=data[0].sum;
+        let tran_id=Math.floor(100000000 + Math.random() * 900000000);
         let val_id=0;
         let delivery_status="pending";
-        let ayment_status="pending";
+        let payment_status="pending";
 
         let Profile=await ProfileModel.aggregate([
-            {$match:{userID:user_id}},
+            {$match: {userID:user_id}},
         ]);
+        // console.log(Profile)
 
+        // Customer Shipping Details
+        let cus_details=`Name: ${Profile[0].cus_name}, Email: ${Profile[0].cus_email}, Address: ${Profile[0].cus_add}, Phone: ${Profile[0].cus_phone}`
+        let ship_details=`Name: ${Profile[0].ship_name}, City: ${Profile[0].ship_city}, Address: ${Profile[0].ship_add}, Phone: ${Profile[0].ship_phone}`
 
-        //Coustomar Shiping Details
-        let cus_details=`Name: ${Profile[0].cus_name}, Email:${Profile[0].cus_email}, Address:${Profile[0].cus_add}, Phone:${Profile[0].cus_phone} `
-        let ship_details=`Name: ${Profile[0].ship_name}, City:${Profile[0].ship_city}, Address:${Profile[0].ship_add}, Phone:${Profile[0].ship_phone} `
+        // Pending Payment Invoice Create
+        await InvoiceModel.create({
+            userID: user_id,
+            payable: payable,
+            cus_details:cus_details,
+            ship_details:ship_details,
+            tran_id:tran_id,
+            val_id:val_id,
+            delivery_status:delivery_status,
+            payment_status:payment_status
+        })
 
+        let  PaymentSetting= await PaymentSettingModel.find();
+        // console.log(PaymentSetting);
 
-        //Pending Payment Invoce Create
+        let form = new FormData();
+        form.append('store_id', PaymentSetting[0]['store_id']);
+        form.append('store_passwd', PaymentSetting[0]['store_passwd']);
+        form.append('total_amount', payable.toString());
+        form.append('currency', PaymentSetting[0]['currency']);
+        form.append('tran_id', tran_id);
+        form.append('success_url', PaymentSetting[0]['success_url'])
+        form.append('fail_url', PaymentSetting[0]['fail_url']);
+        form.append('cancel_url', PaymentSetting[0]['cancel_url']);
+        form.append('ipn_url', PaymentSetting[0]['ipn_url']);
 
+        form.append('cus_name', Profile[0].cus_name);
+        form.append('cus_email', cus_email);
+        form.append('cus_add1', Profile[0].cus_add);
+        form.append('cus_add2', Profile[0].cus_add);
+        form.append('cus_city', Profile[0].cus_city);
+        form.append('cus_state', Profile[0].cus_state);
+        form.append('cus_postcode', Profile[0].cus_postcode);
+        form.append('cus_country', Profile[0].cus_country);
+        form.append('cus_phone', Profile[0].cus_phone);
+        form.append('cus_fax', Profile[0].cus_phone);
 
-        //SSL Commerce Payment Gatyea Call 
+        form.append('shipping_method', 'YES');
+        form.append('ship_name', Profile[0].ship_name);
+        form.append('ship_add1', Profile[0].ship_add);
+        form.append('ship_add2', Profile[0].ship_add);
+        form.append('ship_city', Profile[0].ship_city);
+        form.append('ship_state', Profile[0].ship_state);
+        form.append('ship_country', Profile[0].ship_country);
+        form.append('ship_postcode', Profile[0].ship_postcode);
+        form.append('product_name', 'product_name');
+        form.append('product_category', 'category');
+        form.append('product_profile', 'profile');
+        form.append('product_amount', '3');
 
-        return {status:"Success", message:data}
+        let SSLRes=await axios.post("https://sandbox.sslcommerz.com/gwprocess/v4/api.php",form)
 
-
+        return {status:"success", message:SSLRes.data}
     }
-    catch(e){
-        return {status:"fail", message:"Something went wrong"}
+    catch (e) {
+        return {status:"fail", message:"something"}
     }
 }
 
-// const InvoiceList=async(req,res)=>{
+const PaymentSuccessService = async (req)=>{
+    try{
+        let trxID= req.params.trxID;
+        await InvoiceModel.updateOne({tran_id:trxID},{payment_status:"success"})
+        return {status:"payment success"}
+    }catch (e) {
+        return {status:"fail", message:"Something Went Wrong"}
+    }
+}
+const PaymentFailService = async (req)=>{
+    try{
+        let trxID= req.params.trxID;
+        await InvoiceModel.updateOne({tran_id:trxID},{payment_status:"fail"})
+        return {status:"payment fail"}
+    }catch (e) {
+        return {status:"fail", message:"Something Went Wrong"}
+    }
+}
 
-// }
+const PaymentCancelService = async (req)=>{
+    try{
+        let trxID= req.params.trxID;
+        await InvoiceModel.updateOne({tran_id:trxID},{payment_status:"cancel"})
+        return {status:"payment fail"}
+    }catch (e) {
+        return {status:"fail", message:"Something Went Wrong"}
+    }
+}
 
-// const InvoiceProductList=async(req,res)=>{
+const PaymentIPNService = async (req)=>{
+    try{
+        let trxID= req.params.trxID;
+        let status=req.body['status']
+        await InvoiceModel.updateOne({tran_id:trxID},{payment_status:status})
+        return {status:"payment fail"}
+    }catch (e) {
+        return {status:"fail", message:"Something Went Wrong"}
+    }
+}
 
-// }
-
-// const PaymentSuccess=async(req,res)=>{
-
-// }
-
-// const PaymentFail=async(req,res)=>{
-
-// }
-
-// const PaymetnCancel=async(req,res)=>{
-
-// }
-
-// const PaymentIPN=async(req,res)=>{
-
-// }
-
-
-module.exports={CalculateInvoice}
+module.exports = {CalculateInvoice,PaymentSuccessService,PaymentIPNService,PaymentCancelService,PaymentFailService};

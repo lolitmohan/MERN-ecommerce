@@ -56,5 +56,12 @@ route.get('/CreateProfile',AuthVerify,ProfileController.CreateProfile);
 route.get('/ReadProfile',AuthVerify,ProfileController.ReadProfile);
 route.get('/UpdateProfile',AuthVerify,ProfileController.UpdateProfile);
 
+route.get('/InvoiceList',AuthVerify,InvoiceController.InvoiceCreate);
+route.get('/InvoiceProductList',AuthVerify,InvoiceController.InvoiceCreate);
+
+route.post('/PaymentSuccess/:trxID',InvoiceController.PaymentSuccess);
+route.post('/PaymentCancel/:trxID',InvoiceController.PaymentCancel);
+route.post('/PaymentFail/:trxID',InvoiceController.PaymentFail);
+route.post('/PaymentIPN/:trxID',InvoiceController.PaymentIPN);
 
 module.exports=route;
