@@ -4,7 +4,9 @@ const router=require('./src/router/api');
 const app=new express();
 
 const bodyParser=require('body-parser');
+const cooki=require('cookie-parser');
 
+app.use(cooki());
 
 // Body Parser Implement
 app.use(bodyParser.json())
