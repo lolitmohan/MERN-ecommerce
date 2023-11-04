@@ -51,6 +51,7 @@ route.get('/InvoiceCreate',AuthVerify,InvoiceController.InvoiceCreate);
 
 
 
+
 // Profile
 route.get('/CreateProfile',AuthVerify,ProfileController.CreateProfile);
 route.get('/ReadProfile',AuthVerify,ProfileController.ReadProfile);
